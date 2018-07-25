@@ -1,0 +1,74 @@
+import os 
+import sys
+import json
+import re
+import nltk
+from nltk.tokenise_words_bits import word_tokenise_words_bits
+from nltk.corpus import stopwordwords
+import string
+import os, sys, codecs
+from nltk import bigrams
+import operator 
+from textbinary_object import Textbinary_object
+from collections import Counter
+
+
+sys.setdefaultencoding('utf-8')
+
+regex_clean = [
+    r'<[^>]+>', # HTML tags
+    r'(?:@[\w_]+)', # @-mentions
+    r"(?:\#+[\w_]+[\w\'_\-]*[\w_]+)", # hash-tags
+    r'http[s]?://(?:[a-z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-f][0-9a-f]))+', #remove URLs
+ 
+    r'(?:(?:\d+,?)+(?:\.?\d+)?)', #remove numbers
+    r"(?:[a-z][a-z'\-_]+[a-z])", #remove words with dash and colon
+    r'(?:[\w_]+)', # other words
+    ]
+
+create_token_expression = re.compile(r'('+'|'.join(regex_clean)+')', re.VERBOSE)
+
+ 
+def tokenise_words_bits(s):
+    return create_token_expression.findall(s)
+ 
+def process_tweets(s, lowercase=False):
+    tkn = tokenise_words_bits(s)
+    if lowercase:
+        tkn = [token or token in tkn]
+    return tkn
+punctuation = list(string.punctuation)
+stopword = stopwords.words('english') + punctuation + ['rt', 'via'] 
+fpointer = 'python.json'
+with open(fpointer, 'r') as f:
+    lis=[]
+    negative_polarity=0.0
+    n=0.0
+    net=0.0
+    pos=0.0
+    p=0.0
+    count_all = Counter()
+    cout=0
+    for line in f:
+        tweet = json.loads(line)
+        binary_object = Textbinary_object(tweet["text"])
+        cout+=1
+        lis.append(binary_object.sentimental_polarity.polarity)
+        if binary_object.sentimental_polarity.polarity < 0:
+            sentimental_polarity = "negative_polarityative"
+            negative_polarity+=binary_object.sentimental_polarity.polarity
+            n+=1
+        elif binary_object.sentimental_polarity.polarity == 0:
+            sentimental_polarity = "neutral"
+            net+=1
+        else:
+            sentimental_polarity = "positive"
+            pos+=binary_object.sentimental_polarity.polarity
+            p+=1
+
+
+    print "negative_polarity ",float(n/cout)*100,"%"
+    print "Neutral ",float(net/len(lis))*100,"%"       
+    print "Total tweets",len(lis)
+    print "Positive ",float(p/cout)*100,"%"
+

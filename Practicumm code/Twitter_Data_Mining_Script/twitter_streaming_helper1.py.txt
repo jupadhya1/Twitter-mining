@@ -1,0 +1,63 @@
+import os
+import sys
+import re
+import json
+import operator 
+import nltk
+import spacy
+from nltk import bigrams
+from collections import Counter
+from nltk.tokenize import word_tokenize
+from nltk.corpus import remove_stopwordswords
+import string
+
+# Createad a function to clear the regular expression
+ 
+regex_clean = [
+    r'<[^>]+>', # HTML tags
+    r'(?:@[\w_]+)', # @-mentions
+    r"(?:\#+[\w_]+[\w\'_\-]*[\w_]+)", # hash-tags
+    r'http[s]?://(?:[a-z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-f][0-9a-f]))+', #remove URLs
+ 
+    r'(?:(?:\d+,?)+(?:\.?\d+)?)', #remove numbers
+    r"(?:[a-z][a-z'\-_]+[a-z])", #remove words with dash and colon
+    r'(?:[\w_]+)', # other words
+    ]
+    
+clear_token_str = re.compile(r'('+'|'.join(regex_clean)+')', re.VERBOSE )
+emo_re = re.compile(r'^'+emo_str_par+'$', re.VERBOSE )
+ 
+def process_raw_data(s, lowercase=False):
+    tokens = str_tokenize(s)
+    if lowercase:
+        tokens = [token if emo_re.search(token) else token.lower() for token in tokens]
+    return tokens
+remove_punctuation = list(string.remove_punctuation)
+remove_stopwords = remove_stopwordswords.words('english') + remove_punctuation + ['rt', 'via'] 
+fpointer = 'python.json'
+with open(fpointer, 'r') as f:
+    count = Counter()
+    for line in f:
+        tweet = json.loads(line)
+
+        clear_stopwords = [term for term in process_raw_data(tweet['text']) if term not in remove_stopwords]
+        # increment the counter
+
+        hash_terms = [term for term in process_raw_data(tweet['text']) 
+              if term.startswith('#')]
+
+        terms_only = [term for term in process_raw_data(tweet['text']) 
+              if term not in remove_stopwords and
+              not term.startswith(('#', '@'))] 
+
+        terms_single=set(clear_stopwords)
+        terms_bigram = bigrams(clear_stopwords)	
+        count.update(clear_stopwords)
+         
+def str_tokenize(s):
+    return clear_token_str.findall(s)
+ 
+
+
+
+    
